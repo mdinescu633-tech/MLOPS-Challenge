@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadtester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loadtester
+  template:
+    metadata:
+      labels:
+        app: loadtester
+    spec:
+      containers:
+        - name: loadtester
+          image: ghcr.io/mirceanton/loadtester
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
