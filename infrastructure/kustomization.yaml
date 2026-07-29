@@ -3,3 +3,4 @@ kind: Component
 
 resources:
   - ingress-nginx
+  - metrics-server
