@@ -15,15 +15,15 @@ spec:
     spec:
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:24.0.0
+          image: quay.io/keycloak/keycloak:26.7.0
           args: ["start-dev", "--import-realm"]
           env:
-            - name: KEYCLOAK_ADMIN
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: keycloak-credentials
                   key: KEYCLOAK_ADMIN
-            - name: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: keycloak-credentials
@@ -34,22 +34,38 @@ spec:
               value: "xforwarded"
             - name: KC_HOSTNAME_STRICT
               value: "false"
-          envFrom:
-            - secretRef:
-                name: keycloak-credentials
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
-            - name: realm-config
+            - name: realm-import
               mountPath: /opt/keycloak/data/import
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /realms/loadtester-realm
+              path: /realms/master
               port: 8080
-            initialDelaySeconds: 15
             periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080
+            periodSeconds: 15
+            failureThreshold: 5
       volumes:
-        - name: realm-config
-          configMap:
-            name: keycloak-realm-config
+        - name: realm-import
+          secret:
+            secretName: keycloak-realm-import

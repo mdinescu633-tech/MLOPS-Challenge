@@ -9,5 +9,5 @@ resources:
   - service.yaml
   - ingress.yaml
   - sealed-secret.yaml
-  - realm-configmap.yaml
   - oauth2-proxy.yaml
+  - keycloak-realm-import-sealed.yaml

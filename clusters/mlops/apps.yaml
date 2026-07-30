@@ -9,6 +9,8 @@ spec:
   prune: true
   wait: true
   targetNamespace: loadtester
+  dependsOn:
+    - name: infrastructure
   sourceRef:
     kind: GitRepository
     name: flux-system
