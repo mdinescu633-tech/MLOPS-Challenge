@@ -17,18 +17,24 @@ spec:
         - name: oauth2-proxy
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
           args:
-            - --provider=keycloak-oidc
+            - --provider=oidc
             - --client-id=loadtester-client
-            - --oidc-issuer-url=http://keycloak.keycloak.svc.cluster.local/realms/loadtester-realm
+            - --oidc-issuer-url=http://keycloak.127.0.0.1.nip.io/realms/loadtester-realm
+            - --skip-oidc-discovery=true
+            - --redeem-url=http://keycloak.keycloak.svc.cluster.local/realms/loadtester-realm/protocol/openid-connect/token
+            - --validate-url=http://keycloak.keycloak.svc.cluster.local/realms/loadtester-realm/protocol/openid-connect/userinfo
+            - --oidc-jwks-url=http://keycloak.keycloak.svc.cluster.local/realms/loadtester-realm/protocol/openid-connect/certs
+            - --login-url=http://keycloak.127.0.0.1.nip.io/realms/loadtester-realm/protocol/openid-connect/auth
             - --insecure-oidc-skip-issuer-verification=true
-            - --http-address=0.0.0.0:4180
-            - --upstream=http://loadtester.loadtester.svc.cluster.local
-            - --code-challenge-method=S256
-            - --email-domain=*
-            - --cookie-secure=false
+            - --skip-jwt-bearer-tokens=true
             - --redirect-url=http://loadtester.127.0.0.1.nip.io/oauth2/callback
             - --cookie-domain=.127.0.0.1.nip.io
             - --whitelist-domain=.127.0.0.1.nip.io
+            - --http-address=0.0.0.0:4180
+            - --email-domain=*
+            - --cookie-secure=false
+            - --upstream=static://200
+            - --reverse-proxy=true
           env:
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:

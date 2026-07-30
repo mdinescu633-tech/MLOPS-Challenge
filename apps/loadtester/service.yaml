@@ -1,10 +1,26 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: oauth2-proxy
+  name: loadtester
+  namespace: loadtester
+spec:
+  selector:
+    app: loadtester
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy-cross-ns
   namespace: loadtester
 spec:
   type: ExternalName
   externalName: oauth2-proxy.keycloak.svc.cluster.local
   ports:
     - port: 4180
+      targetPort: 4180
+      name: http

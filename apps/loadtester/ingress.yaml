@@ -2,33 +2,13 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: loadtester-oauth2
-  namespace: loadtester
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: loadtester.127.0.0.1.nip.io
-      http:
-        paths:
-          - path: /oauth2
-            pathType: Prefix
-            backend:
-              service:
-                name: oauth2-proxy
-                port:
-                  number: 4180
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: loadtester
+  name: loadtester-app
   namespace: loadtester
   annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.keycloak.svc.cluster.local:4180/oauth2/auth"
     nginx.ingress.kubernetes.io/auth-signin: "http://loadtester.127.0.0.1.nip.io/oauth2/start?rd=$escaped_request_uri"
-    nginx.ingress.kubernetes.io/auth-snippet: |
-      proxy_set_header Host loadtester.127.0.0.1.nip.io;
+    nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
 spec:
   ingressClassName: nginx
   rules:
@@ -42,3 +22,25 @@ spec:
                 name: loadtester
                 port:
                   number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loadtester-oauth2
+  namespace: loadtester
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: loadtester.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy-cross-ns
+                port:
+                  number: 4180
