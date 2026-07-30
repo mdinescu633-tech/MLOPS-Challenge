@@ -3,12 +3,21 @@ kind: Ingress
 metadata:
   name: loadtester
   annotations:
-    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.keycloak.svc.cluster.local:4180/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "http://loadtester.127.0.0.1.nip.io/oauth2/start?rd=$escaped_request_uri"
 spec:
+  ingressClassName: nginx
   rules:
     - host: loadtester.127.0.0.1.nip.io
       http:
         paths:
+          - path: /oauth2
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180
           - path: /
             pathType: Prefix
             backend:

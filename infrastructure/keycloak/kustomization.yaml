@@ -8,3 +8,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - keycloak-sealed-secret.yaml
+  - realm-configmap.yaml
+  - oauth2-proxy.yaml
