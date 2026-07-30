@@ -27,6 +27,8 @@ spec:
             - --email-domain=*
             - --cookie-secure=false
             - --redirect-url=http://loadtester.127.0.0.1.nip.io/oauth2/callback
+            - --cookie-domain=.127.0.0.1.nip.io
+            - --whitelist-domain=.127.0.0.1.nip.io
           env:
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:
