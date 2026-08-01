@@ -1,0 +1,8 @@
+# load_test.py uses only the Python standard library
+# (urllib, threading, subprocess, json, os, time) — no external
+# packages required.
+#
+# Requirements to run it:
+#   - Python 3.9+
+#   - kubectl installed and configured with access to the cluster
+ 
