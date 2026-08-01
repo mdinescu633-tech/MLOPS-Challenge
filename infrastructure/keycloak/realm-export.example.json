@@ -1,0 +1,73 @@
+{
+  "realm": "loadtester-realm",
+  "enabled": true,
+  "displayName": "Load Tester Realm",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "admin", "description": "Administrator role" },
+      { "name": "developer", "description": "Developer role" },
+      { "name": "tester", "description": "Load tester role" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "loadtester-client",
+      "name": "loadtester-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "<CHANGE_ME_generate_with_openssl_rand_-hex_16>",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "authorizationServicesEnabled": false,
+      "redirectUris": ["http://loadtester.127.0.0.1.nip.io/*"],
+      "webOrigins": ["+"],
+      "protocolMappers": [
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "loadtester-client",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "devuser",
+      "email": "devuser@example.com",
+      "firstName": "Dev",
+      "lastName": "User",
+      "emailVerified": true,
+      "enabled": true,
+      "requiredActions": [],
+      "credentials": [
+        { "type": "password", "value": "<CHANGE_ME>", "temporary": false }
+      ],
+      "realmRoles": ["developer"]
+    },
+    {
+      "username": "admin",
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "<CHANGE_ME>", "temporary": false }
+      ],
+      "realmRoles": ["admin"]
+    }
+  ]
+}

@@ -1,1 +1,22 @@
+# --- Secrets / sensitive local files (never commit unencrypted) ---
 realm-export.json
+*.pem
+*.key
+kubeconfig
+kubeconfig.yaml
+*.kubeconfig
+
+# --- Kubernetes / kubeseal ---
+# Raw (unencrypted) secret manifests generated locally before sealing
+*-secret.yaml
+!infrastructure/**/sealed-secret.yaml
+!infrastructure/**/*-sealed.yaml
+
+# --- Python ---
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# --- Editors / IDEs ---
+.vscode/
