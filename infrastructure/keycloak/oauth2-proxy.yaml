@@ -27,6 +27,7 @@ spec:
             - --login-url=http://keycloak.127.0.0.1.nip.io/realms/loadtester-realm/protocol/openid-connect/auth
             - --insecure-oidc-skip-issuer-verification=true
             - --skip-jwt-bearer-tokens=true
+            - --insecure-oidc-allow-unverified-email=true
             - --redirect-url=http://loadtester.127.0.0.1.nip.io/oauth2/callback
             - --cookie-domain=loadtester.127.0.0.1.nip.io
             - --whitelist-domain=.127.0.0.1.nip.io
