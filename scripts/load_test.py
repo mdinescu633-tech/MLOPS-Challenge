@@ -2,7 +2,6 @@
 """
 Simple load test for the /burn endpoint behind Keycloak + oauth2-proxy.
 
-Same logic as load_test.sh, just in Python:
   1. Get an access token from Keycloak (username/password grant).
   2. Spawn N threads, each hammering /burn in a loop for DURATION seconds,
      recording (status_code, latency) for every request.
@@ -101,9 +100,8 @@ def worker(token: str, end_time: float):
         with results_lock:
             results.append((status, latency))
 
-        # 409 means the target pod already has a burn in progress
-        # (single-flight per pod). Retrying instantly just floods the
-        # endpoint with requests it will reject, so back off a bit.
+        # 409 = pod busy (single-flight per pod, see module docstring) —
+        # back off instead of hammering the endpoint uselessly.
         if status == 409:
             time.sleep(CONFLICT_BACKOFF)
 
@@ -175,16 +173,18 @@ def main():
     latencies = [lat for _, lat in results]
     avg_latency = sum(latencies) / total if total else 0
 
-    # 202 = burn accepted, 409 = pod already busy (expected, not an error),
-    # anything >=500 or a connection failure (status 0) is a real error.
-    accepted = sum(1 for status, _ in results if status == 202)
-    conflicts = sum(1 for status, _ in results if status == 409)
-    errors = sum(1 for status, _ in results if status >= 500 or status == 0)
-    other = total - accepted - conflicts - errors
-
+    # Single pass over results: build the per-code breakdown once, then
+    # derive accepted/conflicts/errors from it instead of re-scanning the
+    # list separately for each bucket (202/409/5xx semantics are explained
+    # in the module docstring).
     codes = {}
     for status, _ in results:
         codes[status] = codes.get(status, 0) + 1
+
+    accepted = codes.get(202, 0)
+    conflicts = codes.get(409, 0)
+    errors = sum(count for status, count in codes.items() if status >= 500 or status == 0)
+    other = total - accepted - conflicts - errors
 
     cpus = [c for c, _ in cpu_mem_samples]
     mems = [m for _, m in cpu_mem_samples]

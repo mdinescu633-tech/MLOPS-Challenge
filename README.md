@@ -85,42 +85,71 @@ Secrets are sealed with `kubeseal` before being committed — the client secret,
 
 ## Initial Setup
 
-Before bootstrapping, copy `infrastructure/keycloak/realm-export.example.json` to
-`realm-export.json`, fill in your own client secret and user passwords, then seal it:
+Before bootstrapping, you need to seal two sets of secrets against your own cluster's Sealed Secrets key — none of the values below are meant to be committed in plaintext anywhere, including this README.
+
+**1. Seal the Keycloak realm import.**
+
+Copy `infrastructure/keycloak/realm-export.example.json` to `realm-export.json`, fill in your own client secret and user passwords, then seal it:
 ```bash
 kubeseal --format yaml < realm-export.json > infrastructure/keycloak/keycloak-realm-import-sealed.yaml
 ```
 
-1. Create the cluster (using k3d — swap this step for kind/minikube if needed):
-   ```bash
-   k3d cluster create mlops -p "80:80@loadbalancer" -p "443:443@loadbalancer"
-   kubectl get nodes
-   kubectl get pods -A
-   ```
-2. Bootstrap FluxCD:
-   ```bash
-   export GITHUB_TOKEN=<your-pat>
-   flux bootstrap github --owner=<you> --repository=MLOPS-Challenge --branch=main --path=clusters/mlops --personal
-   flux get source git
-   flux get kustomizations
-   ```
-3. Check everything came up:
-   ```bash
-   kubectl get pods -n ingress-nginx -n keycloak -n loadtester
-   kubectl top pods -A
-   kubectl top nodes
-   ```
-4. Run the load test:
-   ```bash
-   cd scripts
-   export CLIENT_SECRET=<client secret>
-   export DEVUSER_PASSWORD=<devuser password>
-   python load_test.py
-   ```
-   In another terminal, watch it scale:
-   ```bash
-   kubectl get pods -n loadtester -w
-   ```
+**2. Seal the Keycloak/oauth2-proxy credentials.**
+
+Generate your own random values for each field (e.g. `openssl rand -base64 32`), then run:
+```bash
+kubectl create secret generic keycloak-credentials \
+  --namespace=keycloak \
+  --from-literal=KEYCLOAK_ADMIN="<your-admin-username>" \
+  --from-literal=KEYCLOAK_ADMIN_PASSWORD="<your-admin-password>" \
+  --from-literal=CLIENT_SECRET="<your-oidc-client-secret>" \
+  --from-literal=DEVUSER_PASSWORD="<your-devuser-password>" \
+  --from-literal=OAUTH2_COOKIE_SECRET="<32-byte-random-string>" \
+  --dry-run=client -o yaml | kubeseal \
+  --controller-name=sealed-secrets \
+  --controller-namespace=sealed-secrets \
+  -o yaml > infrastructure/keycloak/sealed-secret.yaml
+```
+
+> **Important:** `CLIENT_SECRET` and `DEVUSER_PASSWORD` here must exactly match whatever you set for the `loadtester-client` secret and the `devuser` password in `realm-export.json` above — oauth2-proxy and the load test script use these to authenticate against Keycloak, so a mismatch means auth will fail (`invalid_client` / `invalid_grant`).
+
+> Both `kubeseal` invocations require the Sealed Secrets controller to already be running in the cluster (see step 3 below) and reachable — either via `kubectl port-forward`, or by pointing `kubeseal` at a fetched public cert with `--cert`.
+
+**3. Create the cluster and bootstrap Flux.**
+
+Create the cluster (using k3d — swap this step for kind/minikube if needed):
+```bash
+k3d cluster create mlops -p "80:80@loadbalancer" -p "443:443@loadbalancer"
+kubectl get nodes
+kubectl get pods -A
+```
+
+Bootstrap FluxCD:
+```bash
+export GITHUB_TOKEN=<your-pat>
+flux bootstrap github --owner=<you> --repository=MLOPS-Challenge --branch=main --path=clusters/mlops --personal
+flux get source git
+flux get kustomizations
+```
+
+**4. Check everything came up:**
+```bash
+kubectl get pods -n ingress-nginx -n keycloak -n loadtester
+kubectl top pods -A
+kubectl top nodes
+```
+
+**5. Run the load test:**
+```bash
+cd scripts
+export CLIENT_SECRET=<client secret>
+export DEVUSER_PASSWORD=<devuser password>
+python load_test.py
+```
+In another terminal, watch it scale:
+```bash
+kubectl get pods -n loadtester -w
+```
 
 From this point on, any change pushed to `main` is picked up automatically by Flux.
 
